@@ -809,6 +809,18 @@ int __init_memblock memblock_clear_nomap(phys_addr_t base, phys_addr_t size)
 	return memblock_setclr_flag(base, size, 0, MEMBLOCK_NOMAP);
 }
 
+#ifdef CONFIG_MEMORY_HOTREMOVE
+int __init_memblock memblock_mark_unused_vmemmap(phys_addr_t base,
+		phys_addr_t size)
+{
+	return memblock_setclr_flag(base, size, 1, MEMBLOCK_UNUSED_VMEMMAP);
+}
+int __init_memblock memblock_clear_unused_vmemmap(phys_addr_t base,
+		phys_addr_t size)
+{
+	return memblock_setclr_flag(base, size, 0, MEMBLOCK_UNUSED_VMEMMAP);
+}
+#endif
 /**
  * __next_reserved_mem_region - next function for for_each_reserved_region()
  * @idx: pointer to u64 loop variable
@@ -1695,6 +1707,26 @@ void __init_memblock memblock_trim_memory(phys_addr_t align)
 		}
 	}
 }
+
+#ifdef CONFIG_MEMORY_HOTREMOVE
+bool __init_memblock memblock_is_vmemmap_unused_range(struct memblock_type *mt,
+		phys_addr_t start, phys_addr_t end)
+{
+	u64 i;
+	struct memblock_region *r;
+
+	i = memblock_search(mt, start);
+	r = &(mt->regions[i]);
+	while (r->base < end) {
+		if (!(r->flags & MEMBLOCK_UNUSED_VMEMMAP))
+			return 0;
+
+		r = &(memblock.memory.regions[++i]);
+	}
+
+	return 1;
+}
+#endif
 
 void __init_memblock memblock_set_current_limit(phys_addr_t limit)
 {

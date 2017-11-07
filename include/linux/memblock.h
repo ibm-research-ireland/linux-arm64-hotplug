@@ -26,6 +26,9 @@ enum {
 	MEMBLOCK_HOTPLUG	= 0x1,	/* hotpluggable region */
 	MEMBLOCK_MIRROR		= 0x2,	/* mirrored region */
 	MEMBLOCK_NOMAP		= 0x4,	/* don't add to kernel direct mapping */
+#ifdef CONFIG_MEMORY_HOTREMOVE
+	MEMBLOCK_UNUSED_VMEMMAP	= 0x8,  /* Mark VMEMAP blocks as dirty */
+#endif
 };
 
 struct memblock_region {
@@ -90,6 +93,10 @@ int memblock_mark_mirror(phys_addr_t base, phys_addr_t size);
 int memblock_mark_nomap(phys_addr_t base, phys_addr_t size);
 int memblock_clear_nomap(phys_addr_t base, phys_addr_t size);
 ulong choose_memblock_flags(void);
+#ifdef CONFIG_MEMORY_HOTREMOVE
+int memblock_mark_unused_vmemmap(phys_addr_t base, phys_addr_t size);
+int memblock_clear_unused_vmemmap(phys_addr_t base, phys_addr_t size);
+#endif
 
 /* Low level functions */
 int memblock_add_range(struct memblock_type *type,
@@ -181,6 +188,11 @@ static inline bool memblock_is_nomap(struct memblock_region *m)
 {
 	return m->flags & MEMBLOCK_NOMAP;
 }
+
+#ifdef CONFIG_MEMORY_HOTREMOVE
+bool memblock_is_vmemmap_unused_range(struct memblock_type *mt,
+		phys_addr_t start, phys_addr_t end);
+#endif
 
 #ifdef CONFIG_HAVE_MEMBLOCK_NODE_MAP
 int memblock_search_pfn_nid(unsigned long pfn, unsigned long *start_pfn,
