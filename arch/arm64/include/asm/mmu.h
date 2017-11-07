@@ -42,6 +42,10 @@ extern void *fixmap_remap_fdt(phys_addr_t dt_phys);
 extern void mark_linear_text_alias_ro(void);
 #ifdef CONFIG_MEMORY_HOTPLUG
 extern void hotplug_paging(phys_addr_t start, phys_addr_t size);
+#ifdef CONFIG_MEMORY_HOTREMOVE
+extern int remove_pagetable(unsigned long start,
+	unsigned long end, bool linear_map, bool check_split);
+#endif
 #endif
 
 #endif

@@ -808,4 +808,33 @@ int arch_add_memory(int nid, u64 start, u64 size, bool want_memblock)
 	return ret;
 }
 
+#ifdef CONFIG_MEMORY_HOTREMOVE
+int arch_remove_memory(u64 start, u64 size)
+{
+	unsigned long start_pfn = start >> PAGE_SHIFT;
+	unsigned long nr_pages = size >> PAGE_SHIFT;
+	unsigned long va_start = (unsigned long) __va(start);
+	unsigned long va_end = (unsigned long)__va(start + size);
+	struct page *page = pfn_to_page(start_pfn);
+	struct zone *zone;
+	int ret = 0;
+
+	/*
+	 * Check if mem can be removed without splitting
+	 * PUD/PMD mappings.
+	 */
+	ret = remove_pagetable(va_start, va_end, true, true);
+	if (!ret) {
+		zone = page_zone(page);
+		ret = __remove_pages(zone, start_pfn, nr_pages);
+		WARN_ON_ONCE(ret);
+
+		/* Actually remove the mapping */
+		remove_pagetable(va_start, va_end, true, false);
+	}
+
+	return ret;
+}
+
+#endif /* CONFIG_MEMORY_HOTREMOVE */
 #endif /* CONFIG_MEMORY_HOTPLUG */
