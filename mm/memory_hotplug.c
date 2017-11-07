@@ -1892,7 +1892,7 @@ EXPORT_SYMBOL(try_offline_node);
  * and online/offline operations before this call, as required by
  * try_offline_node().
  */
-void __ref remove_memory(int nid, u64 start, u64 size)
+int __ref remove_memory(int nid, u64 start, u64 size)
 {
 	int ret;
 
@@ -1908,18 +1908,23 @@ void __ref remove_memory(int nid, u64 start, u64 size)
 	ret = walk_memory_range(PFN_DOWN(start), PFN_UP(start + size - 1), NULL,
 				check_memblock_offlined_cb);
 	if (ret)
-		BUG();
+		goto end_remove;
+
+	ret = arch_remove_memory(start, size);
+
+	if (ret)
+		goto end_remove;
 
 	/* remove memmap entry */
 	firmware_map_remove(start, start + size, "System RAM");
 	memblock_free(start, size);
 	memblock_remove(start, size);
 
-	arch_remove_memory(start, size);
-
 	try_offline_node(nid);
 
+end_remove:
 	mem_hotplug_done();
+	return ret;
 }
 EXPORT_SYMBOL_GPL(remove_memory);
 #endif /* CONFIG_MEMORY_HOTREMOVE */
